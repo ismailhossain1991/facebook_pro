@@ -50,8 +50,8 @@ const Register = ({ setRegister }) => {
     emailOrMobile: "",
     password: "",
     day: date.getDate(),
-    month: "",
-    year: "",
+    month: month[date.getMonth()],
+    year: date.getFullYear(),
     gender: "",
   });
 
@@ -198,14 +198,22 @@ const Register = ({ setRegister }) => {
                 <div className="reg-form-select">
                   <select name="day" id="" onChange={handleInputChange}>
                     {day.map((item, index) => (
-                      <option value={item} key={index}>
+                      <option
+                        selected={item === input.day ? true : false}
+                        value={item}
+                        key={index}
+                      >
                         {item}
                       </option>
                     ))}
                   </select>
                   <select name="month" id="" onChange={handleInputChange}>
                     {month.map((item, index) => (
-                      <option value={item} key={index}>
+                      <option
+                        selected={item === input.month ? true : false}
+                        value={item}
+                        key={index}
+                      >
                         {item}
                       </option>
                     ))}

@@ -228,18 +228,62 @@ export const resendActivation = async (req, res, next) => {
 export const login = async (req, res, next) => {
 
   try {
-    const { email, password } = req.body;
+    const { auth, password } = req.body;
 
-    // validation form
-    if (!email || !password) {
-      return next(createError(400, "All fields are required"));
+    if (isEmail(auth)) {
+      // check email user
+      const emailCheck = await User.findOne({ email: auth });
+      if (!emailCheck) {
+        return next(createError(400, "Email user not found"));
+      } else {
+
+        // check password
+        const userPass = passwordVerify(password, emailCheck.password);
+
+        if (!userPass) {
+          return next(createError(400, "Password not match"));
+        }
+
+        if (userPass) {
+          const token = createToken({ id: emailCheck._id }, '365d');
+          return res.status(200).cookie('authToken', token).json({
+            message: "User create successful",
+            user: emailCheck,
+            token: token
+          });
+        }
+
+
+      }
+
+
+    } else if (isMobile(auth)) {
+      const mobileCheck = await User.findOne({ mobile: auth });
+      if (!mobileCheck) {
+        return next(createError(400, "Mobile user not found"));
+      } else {
+        // password check
+        const userPass = passwordVerify(password, mobileCheck.password);
+        if (!userPass) {
+          return next(createError(400, "Password not match"));
+        }
+
+        if (userPass) {
+          const token = createToken({ id: mobileCheck._id }, '365d');
+          return res.status(200).cookie('authToken', token).json({
+            message: "User Login successful",
+            user: mobileCheck,
+            token: token
+          });
+        }
+      }
+    } else {
+      return next(createError(400, "Invalid mobile or Email"));
     }
 
-    if (!isEmail(email)) {
-      return next(createError(400, "Invalid Email Addres"));
-    }
 
-    const loginUser = await User.findOne({ email: email });
+    ////////////////////
+    const loginUser = await User.findOne({ email: auth });
 
     if (!loginUser) {
       return next(createError(400, "Login user not found !"));
@@ -280,22 +324,21 @@ export const loggedInUser = async (req, res, next) => {
     const auth_token = req.headers.authorization;
 
     if (!auth_token) {
-      next(createError(400, "Token not found"));
+      return next(createError(400, "Token not found"));
     }
 
     if (auth_token) {
       const token = auth_token.split(' ')[1];
-
       const user = tokenVerify(token);
 
       if (!user) {
-        next(createError(400, "Invalid token "));
+        return next(createError(400, "Invalid token "));
       }
 
       if (user) {
         const loggedInUser = await User.findById(user.id);
         if (!loggedInUser) {
-          next(createError(400, "User data not match  "));
+          return next(createError(400, "User data not match  "));
         } else {
           res.status(200).json({
             message: "User data stable",
@@ -305,8 +348,6 @@ export const loggedInUser = async (req, res, next) => {
       }
 
     }
-
-
   } catch (error) {
     next(error);
   }
